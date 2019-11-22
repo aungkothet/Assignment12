@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Assignment12</string>
+    <string name="login">LOGIN</string>
+    <string name="userNameHint">USERNAME</string>
+    <string name="password">PASSWORD</string>
+    <string name="forgot_password">Forgot Password ?</string>
+    <string name="or_connect_with">-------------- OR CONNECT WITH --------------</string>
+
+    <string name="facebook_app_id">307292033116741</string>
+    <string name="fb_login_protocol_scheme">fb307292033116741</string>
+    <string name="logout">LOGOUT</string>
+
+
+</resources>
