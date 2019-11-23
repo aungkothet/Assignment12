@@ -18,9 +18,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
@@ -29,7 +27,7 @@ import io.reactivex.Observable
 import io.reactivex.functions.BiFunction
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
+class MainActivity : AppCompatActivity() {
 
     lateinit var callbackManager: CallbackManager
     lateinit var auth: FirebaseAuth
@@ -38,11 +36,21 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
 
     private val RC_SIGN_IN = 12345
 
+    override fun onStart() {
+        super.onStart()
+        auth = FirebaseAuth.getInstance()
+        val user = auth.currentUser
+        if (user != null) {
+            updateUi(user.photoUrl.toString(), user.displayName, user.email, "Welcome Back")
+        }
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        auth = FirebaseAuth.getInstance()
+
         callbackManager = CallbackManager.Factory.create()
 
         FacebookSdk.sdkInitialize(applicationContext)
@@ -111,7 +119,7 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
             loginForm.visibility = View.VISIBLE
             val accessToken = AccessToken.getCurrentAccessToken()
             val isFBLoggedIn = accessToken != null && !accessToken.isExpired
-            if(isFBLoggedIn){
+            if (isFBLoggedIn) {
                 LoginManager.getInstance().logOut()
             }
         }
@@ -174,14 +182,30 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
     // Email pass sign in
     private fun signInWithEmailPassword(email: String, password: String) {
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this)
-    }
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d("EMAIL_PW_LOGIN", "signInWithEmail:success")
+                    val user = auth.currentUser
+                    hideLoading()
+                    user?.let {
+                        updateUi(
+                            user.photoUrl.toString(),
+                            user.displayName,
+                            user.email,
+                            "Email/Password"
+                        )
+                    }
+                } else {
+                    // If sign in fails, display a message to the user.
+                    Log.w("EMAIL_PW_LOGIN", "signInWithEmail:failure", task.exception)
+                    Toast.makeText(
+                        baseContext, "Authentication failed.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
 
-    // For email login
-    override fun onComplete(p0: Task<AuthResult>) {
-        hideLoading()
-        updateUi("", "", etUserName.text.toString(), "Email/Password")
-        Log.d("EMAIL_LOGIN", etUserName.text.toString())
     }
 
     private fun updateUi(
@@ -251,10 +275,6 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
                             hideLoading()
 
                             user?.let {
-                                Log.d(
-                                    "GOOGLE_LOGIN",
-                                    "${user.displayName}, ${user.email}, ${user.phoneNumber}, ${user.photoUrl} "
-                                )
                                 updateUi(
                                     user.photoUrl.toString(),
                                     user.displayName,
@@ -262,7 +282,6 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
                                     "Google"
                                 )
                             }
-
                         } else {
                             Log.w("GOOGLE_LOGIN", "signInWithCredential:failure", task.exception)
                         }
@@ -271,6 +290,5 @@ class MainActivity : AppCompatActivity(), OnCompleteListener<AuthResult> {
                 Log.w("GOOGLE_LOGIN", "Google sign in failed", e)
             }
         }
-
     }
 }
